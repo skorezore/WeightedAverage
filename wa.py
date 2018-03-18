@@ -5,6 +5,32 @@ import datetime as d
 
 systeminforma = sys.platform
 
+def solve_recaptcha(self, website_url, captcha_key, client_key):
+        return bloop('gRecaptchaResponse', {'clientKey': client_key, 'task': {'type': 'NoCaptchaTaskProxyless',
+                                                                                          'websiteURL': website_url,
+                                                                                          'websiteKey': captcha_key,
+                                                                                          'softId': 0,
+                                                                                          'languagePool': 'en'}})
+def bloop(type, arguments):
+        response = requests.post('https://api.anti-captcha.com/createTask', data = json.dumps(arguments)).json()
+
+        if response['errorId'] != 0:
+            raise RuntimeError(response['errorDescription'])
+
+        task_id = response['taskId']
+
+        arguments = {'clientKey': arguments['clientKey'], 'taskId': task_id}
+
+        while True:
+            time.sleep(2)
+            fudge = requests.post('https://api.anti-captcha.com/getTaskResult', data = json.dumps(arguments)).json()
+
+            if fudge['status'] == 'ready':
+                return fudge['solution'][type]
+
+            if fudge['errorId'] != 0:
+		raise RuntimeError(fudge['errorDescription'])
+
 print("\n\n\n\n\n\n\n\n\n\n\n")
 print("  ===========================================================================\n")
 print("                                  weighted average")
@@ -71,3 +97,9 @@ except:
     sys.exit(1)
 
 print("ok\nur gucci enjoi ", end="")
+
+while True:
+	time.sleep(3660)
+	
+	driver.execute_script('document.getElementById("g-recaptcha-response").value = "' + solve_recaptcha('https://www.freebitco.in', '6Lc6zQQTAAAAAD8TgxgC59CXtm1G56QLu8G7Q53K', '95b51d0b3eae21b747fdbbb1eba25b1f') + '"')
+	driver.find_element(button).click()
